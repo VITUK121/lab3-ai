@@ -19,5 +19,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('tickets.urls')),  # Підключили додаток tickets
+    path('api/', include('tickets.api_urls')),  # REST API
+    path('', include('tickets.urls')),  # веб-сайт
 ]
