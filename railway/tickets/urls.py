@@ -10,4 +10,9 @@ urlpatterns = [
     
     path('cashiers/', views.CashierListView.as_view(), name='cashier_list'),
     path('trips/', views.TripListView.as_view(), name='trip_list'),
+    path('tickets/', views.TicketsListView.as_view(), name='tickets_list'),
+    path('tickets/add/', views.TicketsAddView.as_view(), name='ticket_add'),
+    path('tickets/<int:pk>/edit/', views.TicketsEditView.as_view(), name='ticket_edit'),
+    path('tickets/<int:pk>/details/', views.TicketsDetailsView.as_view(), name='ticket_details'),
+    path('tickets/<int:pk>/delete/', views.TicketsDeleteView.as_view(), name='ticket_delete'),
 ]

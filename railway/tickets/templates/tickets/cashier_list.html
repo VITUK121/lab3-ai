@@ -1,19 +1,23 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/min.css' %}">
     <title>Document</title>
 </head>
 <body>
-    <!-- cashier_list.html -->
-    <h1>Касири</h1>
-    <ul>
-    {% for cashier in cashiers %}
-    <li>{{ cashier.full_name }} (Прийнятий: {{ cashier.hire_date }})</li>
-    {% endfor %}
-    </ul>
-    <a href="{% url 'home' %}">Назад</a>
+    <div class="container">
+        <!-- cashier_list.html -->
+        <h1>Касири</h1>
+        <ul>
+            {% for cashier in cashiers %}
+            <li>{{ cashier.full_name }} (Прийнятий: {{ cashier.hire_date }})</li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'home' %}">Назад</a>
+    </div>
 
 </body>
 </html>

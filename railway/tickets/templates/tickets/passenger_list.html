@@ -1,18 +1,26 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
-<head><title>Список пасажирів</title></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/min.css' %}">
+    <title>Список пасажирів</title>
+</head>
 <body>
-<h1>Пасажири</h1>
-<a href="{% url 'passenger_add' %}">Додати нового пасажира</a>
-<ul>
-    {% for passenger in passengers %}
-        <li>
-            {{ passenger.full_name }} ({{ passenger.passport }}, {{ passenger.age }} років)
-            <a href="{% url 'passenger_edit' passenger.id %}">Редагувати</a>
-            <a href="{% url 'passenger_delete' passenger.id %}">Видалити</a>
-        </li>
-    {% endfor %}
-</ul>
-<a href="{% url 'home' %}">Назад на головну</a>
+    <div class="container">
+        <h1>Пасажири</h1>
+        <a href="{% url 'passenger_add' %}">Додати нового пасажира</a>
+        <ul>
+            {% for passenger in passengers %}
+                <li>
+                    {{ passenger.full_name }} ({{ passenger.passport }}, {{ passenger.age }} років)
+                    <a href="{% url 'passenger_edit' passenger.id %}">Редагувати</a>
+                    <a href="{% url 'passenger_delete' passenger.id %}">Видалити</a>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'home' %}">Назад на головну</a>
+    </div>
 </body>
 </html>
