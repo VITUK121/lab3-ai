@@ -1,4 +1,4 @@
-# tickets/models.py
+from decimal import Decimal
 from django.db import models
 from django.forms import ValidationError
 from datetime import date
@@ -11,10 +11,12 @@ class TicketOffice(models.Model):
     def __str__(self):
         return f"{self.name}, {self.location}, тел. {self.phone}"
 
-
 class Person(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    
+    # НОВЕ: Фото для людей
+    photo = models.ImageField(upload_to='people/', blank=True, null=True, verbose_name="Фото")
 
     class Meta:
         abstract = True
@@ -23,121 +25,49 @@ class Person(models.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
-    def initials(self):
-        return f"{self.first_name[0]}.{self.last_name[0]}."
-
     def greet(self):
         return f"Вітаю, я {self.full_name}!"
-
 
 class Passenger(Person):
     passport = models.CharField(max_length=50)
     age = models.PositiveIntegerField()
-
-    def passport_info(self):
-        return f"Паспорт: {self.passport}"
-
-    def age_group(self):
-        if self.age < 18:
-            return "неповнолітній"
-        elif self.age > 60:
-            return "пенсіонер"
-        return "дорослий"
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.passport})"
-
+    def __str__(self): return f"{self.full_name} ({self.passport})"
 
 class Cashier(Person):
     hire_date = models.DateField()
-
-    def work_years(self):
-        return date.today().year - self.hire_date.year
-
-    def introduce(self):
-        return f"Я касир {self.full_name}, працюю {self.work_years()} років."
-    
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}"
-
+    def __str__(self): return self.full_name
 
 class Trip(models.Model):
     start_station = models.CharField(max_length=255)
     end_station = models.CharField(max_length=255)
     distance_km = models.PositiveIntegerField()
-    number = models.CharField(max_length=50)
-    train_type = models.CharField(max_length=100)
-    departure = models.DateTimeField()
-    arrival = models.DateTimeField()
+    # НОВЕ: Фото рейсу
+    image = models.ImageField(upload_to='trips/', blank=True, null=True, verbose_name="Фото рейсу")
     
-    # Виправлено: додано default, щоб старі записи не ламалися
-    price = models.PositiveIntegerField(help_text="Вартість квитка:", default=100)
-    capacity = models.PositiveIntegerField(default=100, help_text="Загальна кількість місць")
+    price = models.PositiveIntegerField(default=100)
+    capacity = models.PositiveIntegerField(default=100)
+    number = models.CharField(max_length=50, default='None')
+    train_type = models.CharField(max_length=100, default='Regular')
+    departure = models.DateTimeField(auto_now_add=True) # Спрощено для прикладу
+    arrival = models.DateTimeField(auto_now_add=True)
 
     @property
     def available_seats(self):
-        sold_count = self.tickets.count() 
-        return self.capacity - sold_count
-
-    def duration_minutes(self):
-        delta = self.arrival - self.departure
-        return int(delta.total_seconds() // 60)
-
-    def duration_str(self):
-        mins = self.duration_minutes()
-        hours = mins // 60
-        minutes = mins % 60
-        return f"{hours} год {minutes} хв"
-
-    def __str__(self):
-        return f"{self.start_station} — {self.end_station} ({self.distance_km} км)"
-
+        return self.capacity - self.tickets.count()
+    def __str__(self): return f"{self.start_station} - {self.end_station}"
 
 class Ticket(models.Model):
-    TAX = 0.2
-    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE, related_name='tickets')
-    cashier = models.ForeignKey(Cashier, on_delete=models.SET_NULL, null=True, related_name='sold_tickets')
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='tickets')
-    purchase_date = models.DateTimeField(auto_now_add=True)
+    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE, related_name='tickets')
+    cashier = models.ForeignKey(Cashier, on_delete=models.SET_NULL, null=True)
     
-    # ВИПРАВЛЕНО: base_price тепер число, а не ForeignKey
-    # blank=True означає, що касиру не обов'язково вводити його вручну
+    # Використовуємо Decimal, щоб не було помилок валідації
     base_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True)
-    
-    payment_method = models.CharField(max_length=50, blank=True, null=True)
     paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
-    @staticmethod
-    def calculate_discount(age):
-        if age < 18:
-            return 0.5
-        elif age > 60:
-            return 0.7
-        return 1.0
-
-    @property
-    def price(self):
-        # Якщо base_price ще немає (наприклад, об'єкт тільки створюється в пам'яті), беремо з рейсу
-        price_to_calc = float(self.base_price) if self.base_price else float(self.trip.price)
-        
-        discount = self.calculate_discount(self.passenger.age)
-        discounted_price = price_to_calc * discount
-        return round(discounted_price * (1 + self.TAX), 2)
-    
-    def clean(self):
-        """Перевірка перед збереженням квитка"""
-        if self.pk is None:
-            if self.trip.available_seats <= 0:
-                raise ValidationError(f"На рейс {self.trip} більше немає вільних місць!")
+    payment_method = models.CharField(max_length=50, blank=True, default="Cash")
 
     def save(self, *args, **kwargs):
-        # ЛОГІКА КОПІЮВАННЯ ЦІНИ:
-        # Якщо ціна не задана вручну -> беремо з Trip
         if not self.base_price:
             self.base_price = self.trip.price
-            
-        self.full_clean()
+        self.paid_amount = self.base_price # Спрощена логіка для Лаби 3
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.trip.id} {self.trip.start_station}-{self.trip.end_station}"

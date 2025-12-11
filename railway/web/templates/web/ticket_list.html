@@ -1,0 +1,13 @@
+{% extends 'web/base.html' %}
+{% block content %}
+<h2>Список Квитків</h2>
+<a href="{% url 'ticket_add' %}">Створити новий квиток</a>
+<ul>
+    {% for ticket in tickets %}
+    <li>
+        Квиток #{{ ticket.id }} ({{ ticket.passenger }})
+        <a href="{% url 'ticket_detail' ticket.id %}">Деталі</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

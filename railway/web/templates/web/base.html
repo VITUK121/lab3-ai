@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><title>Railway</title></head>
+<body>
+    <nav>
+        <a href="{% url 'home' %}">Головна</a> | 
+        <a href="{% url 'tickets_list' %}">Квитки</a> |
+        <a href="{% url 'trip_list' %}">Рейси</a> |
+        {% if user.is_authenticated %}
+            Привіт, {{ user.username }} 
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %} <button>Вийти</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}">Вхід</a> | <a href="{% url 'register' %}">Реєстрація</a>
+        {% endif %}
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+</body>
+</html>
